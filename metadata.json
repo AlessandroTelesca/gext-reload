@@ -1,0 +1,9 @@
+{
+  "uuid": "gext-reload@alessandrot",
+  "name": "Extension Reload Helper",
+  "description": "Lets the gext-reload command swap a running extension for an updated copy without logging out.",
+  "shell-version": [
+    "50"
+  ],
+  "version": 1
+}

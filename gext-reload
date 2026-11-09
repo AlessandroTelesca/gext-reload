@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# gext-reload <uuid>: load the installed version of a GNOME Shell extension into the running shell, without
+# logging out.
+#
+# The shell keeps an extension's code in memory once loaded, by file path, and its GObject classes registered by
+# name. So this makes a fresh copy of the extension elsewhere, with those classes renamed, and has the helper
+# extension gext-reload@alessandrot swap the running extension for the copy. Without the helper it prints (and
+# copies) a line that does the same from Looking Glass: Super+R, `lg`, paste into the Evaluator, Enter.
+#
+# The copy lives in $XDG_RUNTIME_DIR and is gone after logout; the next login loads the installed version.
+set -euo pipefail
+
+uuid=${1:?usage: gext-reload <extension uuid>}
+src=${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions/$uuid
+[[ -f $src/metadata.json ]] || { echo "No extension installed at $src" >&2; exit 1; }
+
+stamp=$(date +%s)
+dst=${XDG_RUNTIME_DIR:-/tmp}/gext-reload/$stamp/$uuid
+mkdir -p "$(dirname "$dst")"
+cp -r "$src" "$dst"
+
+python3 - "$dst" "$stamp" <<'PY'
+import pathlib, re, sys
+
+root, stamp = pathlib.Path(sys.argv[1]), sys.argv[2]
+files = {p: p.read_text() for p in root.rglob('*.js')}
+
+names = set()
+for text in files.values():
+    names.update(re.findall(r'registerClass\(\s*(?:\{.*?\}\s*,\s*)?class\s+(\w+)', text, re.S))
+    names.update(re.findall(r'GTypeName:\s*[\'"`](\w+)[\'"`]', text))
+
+if names:
+    pattern = re.compile(r'\b(' + '|'.join(map(re.escape, sorted(names))) + r')\b')
+    for path, text in files.items():
+        path.write_text(pattern.sub(lambda m: f'{m.group(1)}_r{stamp}', text))
+PY
+
+line="(async (uuid, dir) => { const m = Main.extensionManager; const old = m.lookup(uuid); if (old) await m.unloadExtension(old); m._unloadedExtensions.delete(uuid); await m.loadExtension(m.createExtensionObject(uuid, Gio.File.new_for_path(dir), 2)); })('$uuid', '$dst')"
+
+# With the helper extension (gext-reload@alessandrot) running, it does the swap; otherwise Looking Glass has to.
+if out=$(gdbus call --session --dest org.gnome.Shell --object-path /io/github/alessandrotelesca/GextReload \
+        --method io.github.alessandrotelesca.GextReload.Reload "$uuid" "$dst" 2>&1); then
+    echo "Reloaded $uuid."
+    exit 0
+elif [[ $out != *UnknownMethod* && $out != *UnknownObject* && $out != *"No such"* && $out != *"does not exist"* ]]; then
+    echo "Reloading $uuid failed: $out" >&2
+    exit 1
+fi
+
+echo "$line"
+if [[ -z ${GEXT_NO_COPY:-} ]] && command -v wl-copy >/dev/null; then
+    wl-copy "$line"
+    echo "The helper extension is not running. Line copied: Super+R, lg, paste into the Evaluator, Enter." >&2
+fi
