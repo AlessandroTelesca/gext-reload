@@ -22,7 +22,7 @@ install -m 755 gext-reload ~/.local/bin/
 gnome-extensions pack --force --extra-source=gext-reload . && gnome-extensions install --force gext-reload@alessandrot.shell-extension.zip
 ```
 
-then log out and in once and `gnome-extensions enable gext-reload@alessandrot`.
+then log out and in once and `gnome-extensions enable gext-reload@user`.
 
 Limits:
 
