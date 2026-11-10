@@ -34,7 +34,7 @@ export default class GextReloadExtension extends Extension {
     async _reload(uuid, dir) {
         if (uuid === this.uuid)
             throw new Error('The helper cannot reload itself');
-        // Only what the script prepares: <runtime dir>/gext-reload/<stamp>/<uuid>.
+        // Only what the script prepares: <runtime dir>/gext-reload/<stamp>/gnome-shell/extensions/<uuid>.
         const root = `${GLib.get_user_runtime_dir()}/gext-reload/`;
         const file = Gio.File.new_for_path(dir);
         if (!file.get_path().startsWith(root) || file.get_basename() !== uuid)

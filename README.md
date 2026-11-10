@@ -10,7 +10,7 @@ Works for a newly installed extension and for an update of one that is already r
 
 Two parts:
 
-- `gext-reload` (script, goes in `~/.local/bin`): copies the installed extension to `$XDG_RUNTIME_DIR/gext-reload/<timestamp>/<uuid>` and, in the copy, renames the classes passed to `GObject.registerClass`. The shell keeps loaded code in memory by file path and GObject classes registered by name, so a fresh path and fresh names make it load the new code.
+- `gext-reload` (script, goes in `~/.local/bin`): copies the installed extension to `$XDG_RUNTIME_DIR/gext-reload/<timestamp>/gnome-shell/extensions/<uuid>` and, in the copy, renames the classes passed to `GObject.registerClass`. The shell keeps loaded code in memory by file path and GObject classes registered by name, so a fresh path and fresh names make it load the new code.
 - `gext-reload@alessandrot` (helper extension): takes the script's request over D-Bus and swaps the running extension for the copy. Without it the script prints, and copies, a line that does the same from Looking Glass.
 
 The copy is gone after logout; the next login loads the installed version.

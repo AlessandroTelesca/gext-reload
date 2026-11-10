@@ -15,7 +15,9 @@ src=${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions/$uuid
 [[ -f $src/metadata.json ]] || { echo "No extension installed at $src" >&2; exit 1; }
 
 stamp=$(date +%s)
-dst=${XDG_RUNTIME_DIR:-/tmp}/gext-reload/$stamp/$uuid
+# Under a gnome-shell/extensions directory, as an installed extension is: the preferences window finds the extension
+# its code belongs to by that part of the path, and does not open without it.
+dst=${XDG_RUNTIME_DIR:-/tmp}/gext-reload/$stamp/gnome-shell/extensions/$uuid
 mkdir -p "$(dirname "$dst")"
 cp -r "$src" "$dst"
 
